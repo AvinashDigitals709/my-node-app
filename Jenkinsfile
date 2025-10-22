@@ -37,24 +37,21 @@ pipeline {
         }
 
         stage('Run Application') {
-            steps {
-                sh '''
-                    # Kill any previous instance on the same port (optional, useful for repeated builds)
-                    pkill -f "node app.js" || true
+    steps {
+        sh '''
+            # Stop any previous instance
+            pm2 delete my-node-app || true
 
-                    # Start Node.js app in background with logs
-                    nohup node app.js > app.log 2>&1 &
-                    
-                    # Give app time to start
-                    sleep 5
+            # Start Node.js app via PM2
+            pm2 start app.js --name my-node-app --no-daemon
 
-                    # Show last few lines of logs for confirmation
-                    tail -n 10 app.log
-                '''
-                echo "🚀 Node.js App started in background on port $APP_PORT!"
-            }
-        }
+            # Show PM2 status
+            pm2 status
+        '''
+        echo "🚀 Node.js App started via PM2!"
     }
+}
+
 
     post {
         always {

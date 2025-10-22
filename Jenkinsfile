@@ -33,11 +33,14 @@ pipeline {
 
         stage('Run Application') {
             steps {
-                sh 'node app.js & sleep 5'
-                echo 'Application started successfully!'
+                sh '''
+                      nohup node app.js > app.log 2>&1 &
+                        sleep 5
+                '''
+                echo "🚀 Node.js App started in background!"
             }
         }
-    }
+
 
     post {
         always {

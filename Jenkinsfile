@@ -61,7 +61,7 @@ pipeline {
                 echo "🚀 Node.js App started via PM2 and running on port ${APP_PORT}!"
             }
         }
-    }
+    // }
 
     post {
         always {

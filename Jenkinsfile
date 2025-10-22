@@ -2,11 +2,12 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'Default'  // Your Node.js installation in Jenkins
+        nodejs 'Default'  // Make sure Node.js is installed under Manage Jenkins → Global Tool Configuration
     }
 
     environment {
         APP_PORT = "3000"
+        APP_NAME = "my-node-app"
     }
 
     stages {
@@ -24,34 +25,43 @@ pipeline {
 
         stage('Build') {
             steps {
-                // If no build script exists, it will skip gracefully
-                sh 'npm run build || echo "No build script found"'
+                sh 'npm run build || echo "⚠️ No build script found"'
             }
         }
 
         stage('Test') {
             steps {
-                // If no tests exist, it will skip gracefully
-                sh 'npm test || echo "No tests found"'
+                sh 'npm test || echo "⚠️ No tests found"'
             }
         }
 
         stage('Run Application') {
-    steps {
-        sh '''
-            # Stop any previous instance
-            pm2 delete my-node-app || true
+            steps {
+                sh '''
+                    # Install PM2 globally if not already installed
+                    if ! command -v pm2 >/dev/null 2>&1; then
+                        npm install -g pm2
+                    fi
 
-            # Start Node.js app via PM2
-            pm2 start app.js --name my-node-app --no-daemon
+                    # Stop any running instance (ignore errors if not running)
+                    pm2 delete "$APP_NAME" || true
 
-            # Show PM2 status
-            pm2 status
-        '''
-        echo "🚀 Node.js App started via PM2!"
+                    # Start Node.js app using PM2 in daemon mode (background)
+                    pm2 start app.js --name "$APP_NAME"
+
+                    # Wait a few seconds for it to start
+                    sleep 5
+
+                    # Display running PM2 apps
+                    pm2 status
+
+                    # Display the last few lines of logs
+                    pm2 logs "$APP_NAME" --lines 10 --nostream
+                '''
+                echo "🚀 Node.js App started via PM2 and running on port ${APP_PORT}!"
+            }
+        }
     }
-}
-
 
     post {
         always {
